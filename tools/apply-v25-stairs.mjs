@@ -51,11 +51,36 @@ const replacement = `function drawGroundStairForeground(layer) {
 }
 `;
 let result = input.slice(0, start) + replacement + input.slice(end);
+
+/* The player walks on the foreground side of the staircase banister.
+   Do not redraw banister pixels over an animated character while on steps.
+   Normal collision still prevents entering the railing off the transition. */
+const pathStart = "const stairFoot = [944,1091];";
+const pathTreads = "const treads = [[976,1075],[1015,1043],[1050,1013],[1092,978],[1132,938]];";
+assert(result.includes(pathStart) && result.includes(pathTreads),
+ 'V23 step coordinates differ, refusing geometry change');
+// The diagonal footpath is lowered on the picture by 18-25 pixels.
+result = result.replace(pathStart, "const stairFoot = [944,1110];")
+  .replace(pathTreads, "const treads = [[976,1095],[1015,1066],[1050,1037],[1092,1001],[1132,961]];");
+// Align the older floor definition's cached treads to the actual route.
+const oldFloorTreads = 'treadTurns: [[944,1091],[976,1075],[1015,1043],[1050,1013],[1092,978],[1132,938]]';
+assert(result.includes(oldFloorTreads), 'V23 floor treads changed');
+result = result.replace(oldFloorTreads,
+ 'treadTurns: [[944,1110],[976,1095],[1015,1066],[1050,1037],[1092,1001],[1132,961]]');
+// The rendered rail stays in the room background, but is never overlaid above the hero.
+const foregroundCall='drawGroundStairForeground(groundStairLayer(y, onSteps));';
+assert(result.includes(foregroundCall), 'V23 foreground draw call changed');
+result = result.replace(foregroundCall,
+ 'if(!stairTransition?.onSteps) drawGroundStairForeground(groundStairLayer(y, onSteps));');
+
 result = result.replace('Oberwelt-Demo V23', 'Oberwelt-Demo V25 – Treppengeländer');
 assert(result !== input);
 assert(result.includes('function advanceStairs(dt) {'));
 assert(result.includes("const heroHouseFootprintsV21"));
 assert(result.includes('stairTransition?.onSteps'));
+assert(result.includes('[[976,1095],[1015,1066]'));
+assert(result.includes('if(!stairTransition?.onSteps) drawGroundStairForeground'));
+assert(!result.includes('const stairFoot = [944,1091]'));
 assert(!result.includes('[[923,944],[953,936]'));
 // Separate embedded scripts, without accidentally interpreting CSS/image data URLs.
 for (const [i, match] of [...result.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].entries()) {
