@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monsters of Midgard – Gegner-Kampfsprite-Demo V1</title>
+<style>
+:root{color-scheme:dark;--gold:#dbbb77;--line:#596374;--bg:#080e17;--panel:#162234}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% 0%,#233348,#080d16 68%);color:#f4ebd7;font:15px system-ui,-apple-system,sans-serif}
+main{max-width:1000px;margin:auto;padding:16px 12px 34px}
+h1{font-size:clamp(20px,5vw,29px);margin:4px 0 3px;letter-spacing:.03em}
+.subtitle{margin:0 0 14px;color:#afbac9;font-size:13px}
+.shell{border:2px solid #7c6a4b;border-radius:17px;overflow:hidden;box-shadow:0 15px 42px #0008;background:#0d1421}
+.viewport{position:relative;width:100%;aspect-ratio:16/10;min-height:240px;background:#94b5ae}
+canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+.hud{display:grid;grid-template-columns:42% 58%;min-height:145px;border-top:3px solid #af9465;background:#121e2d}
+.message{padding:17px 12px 16px 15px;border-right:2px solid #3d4c58;line-height:1.55;min-width:0}
+.small{font-size:11px;color:#bfcbd5;text-transform:uppercase;letter-spacing:.14em}
+#dialog{margin-top:12px;font-size:clamp(13px,2.8vw,18px)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:13px}
+button{font:inherit;cursor:pointer;border:1px solid #8c764d;border-radius:10px;background:linear-gradient(#3c4c5b,#1e2c3d);color:#fff3d9;padding:10px 8px;min-height:45px;font-weight:700}
+button:hover,button:focus-visible{outline:2px solid #d2b67b;outline-offset:1px}
+button:disabled{opacity:.45;cursor:default}
+button.primary{background:linear-gradient(#9f403b,#6f202b)}
+button.secondary{background:linear-gradient(#536c76,#29464f)}
+.controls{margin-top:16px;display:grid;gap:10px;grid-template-columns:1fr}
+.controlbox{background:#152132;border:1px solid #43536a;padding:12px;border-radius:13px}
+.controlbox h2{font-size:14px;margin:0 0 10px;color:#e8cf99}
+.trainers{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.trainers button{min-height:60px;font-size:clamp(11px,2vw,14px);padding:8px 4px}
+.trainers button[aria-pressed=true]{background:linear-gradient(#c8a366,#7e542a);color:#131927;border-color:#ffdf96}
+.transport{display:flex;flex-wrap:wrap;gap:8px}
+.transport button{flex:1;min-width:120px}
+.progress{background:#080e16;border:1px solid #516072;height:12px;border-radius:20px;overflow:hidden;margin-top:12px}
+#bar{height:100%;width:0%;background:linear-gradient(90deg,#9b454c,#f1ca84)}
+.status{font-size:12px;color:#b8c2cb;margin-top:8px;min-height:18px}
+.note{color:#b9c6ce;font-size:12px;line-height:1.5;margin:12px 3px 0}
+@media (min-width:700px){.controls{grid-template-columns:1fr 1fr}.viewport{aspect-ratio:16/9}}
+@media (max-width:420px){.hud{min-height:140px}.actions{gap:6px;padding:8px}.message{padding:11px}.actions button{min-height:43px}.trainers{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<main>
+<h1>MONSTERS OF MIDGARD</h1>
+<p class="subtitle">Kampfbildschirm · NPC-Gegner · Front-/Dreiviertelansicht · Midgard-Kugelwurf</p>
+<section class="shell" aria-label="Spielbare Gegner-Kampfanimation">
+<div class="viewport"><canvas id="scene" width="640" height="400" aria-label="Kampfszene mit Gegner auf rechter oberer Plattform"></canvas></div>
+<div class="hud">
+<div class="message"><div class="small">Kampfmeldung</div><div id="dialog" aria-live="polite">Ein Herausforderer stellt sich dir!</div></div>
+<div class="actions">
+<button class="primary" id="start">KAMPFPOSE</button>
+<button class="primary" id="throw">KUGELWURF</button>
+<button class="secondary" id="full">GANZE SZENE</button>
+<button id="reset">ZURÜCK</button>
+</div>
+</div>
+</section>
+<div class="controls">
+<section class="controlbox">
+<h2>Gegner auswählen</h2>
+<div class="trainers" id="trainers"></div>
+</section>
+<section class="controlbox">
+<h2>Animationssteuerung</h2>
+<div class="transport">
+<button id="pause">Pause</button>
+<button id="slow">Tempo: 1×</button>
+<button id="loop">Wiederholen: Aus</button>
+</div>
+<div class="progress"><div id="bar"></div></div>
+<div class="status" id="status">Bereit · Standbild</div>
+</section>
+</div>
+<p class="note">Prototyp V1: Die Figuren werden im Browser als eigenständige Pixelart-Platzhalter gezeichnet. Die freigegebenen Original-Frames sind in dieser Datei nicht eingebettet. Die Ballwurf-Animation zeigt den Midgard-Kugel-Flug zur unteren linken Spielerseite. Keine Veränderung an bestehenden Engine-Dateien.</p>
+</main>
+<script>
+"use strict";
+const C=document.getElementById("scene"),g=C.getContext("2d"),W=C.width,H=C.height;
+g.imageSmoothingEnabled=false;
+const people=[
+ {name:"Rot-Schwarz",hair:"#1b1824",accent:"#b83c3f",skin:"#e5ad82",trouser:"#222332",hat:0,style:0},
+ {name:"Blond",hair:"#e2b95e",accent:"#bc7b34",skin:"#d99e72",trouser:"#414257",hat:1,style:1},
+ {name:"Braun",hair:"#69433a",accent:"#bb4d47",skin:"#e5b28d",trouser:"#252a3b",hat:0,style:2},
+ {name:"Silber",hair:"#c6cfda",accent:"#9e4150",skin:"#e8b6a3",trouser:"#303342",hat:2,style:3}
+];
+let chosen=0,mode="idle",startTime=0,elapsed=0,speed=1,repeat=false,paused=false,raf=0,last=0;
+const durations={idle:1,pose:1250,throw:2050,full:3350};
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const ease=t=>{t=clamp(t);return t*t*(3-2*t)};
+function rect(x,y,w,h,c){g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+function ellipse(x,y,rx,ry,c){g.beginPath();g.ellipse(x,y,rx,ry,0,0,Math.PI*2);g.fillStyle=c;g.fill()}
+function poly(points,c){g.fillStyle=c;g.beginPath();g.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)g.lineTo(points[i][0],points[i][1]);g.closePath();g.fill()}
+function line(x1,y1,x2,y2,w,c){g.strokeStyle=c;g.lineWidth=w;g.lineCap="square";g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke()}
+function label(t,x,y,size=14,color="#1b2635"){g.font="bold "+size+"px monospace";g.fillStyle=color;g.fillText(t,x,y)}
+function background(time){
+ const sky=g.createLinearGradient(0,0,0,400);sky.addColorStop(0,"#94b7bf");sky.addColorStop(.68,"#d9d9b0");sky.addColorStop(1,"#bfc9a6");g.fillStyle=sky;g.fillRect(0,0,W,H);
+ poly([[0,236],[68,180],[154,220],[260,154],[354,220],[443,174],[548,238],[640,190],[640,310],[0,310]],"#78918d");
+ poly([[0,269],[120,216],[214,256],[350,194],[480,262],[600,208],[640,236],[640,340],[0,340]],"#587c72");
+ for(let i=0;i<16;i++){let x=i*46-11, y=248+(i*17)%40;poly([[x,y+36],[x+12,y-21],[x+28,y+36]],i%2?"#40695a":"#4c7562");rect(x+12,y+26,4,17,"#486152")}
+ rect(0,310,W,90,"#829c79");
+ for(let i=0;i<80;i++){let x=(i*107)%W,y=320+(i*43)%76;rect(x,y,5,2,i%3?"#92a87b":"#718e66")}
+ ellipse(435,273,151,41,"#40565266");ellipse(434,263,147,37,"#d0c6aa");ellipse(434,258,126,28,"#aabda9");
+ ellipse(176,359,148,36,"#47574b66");ellipse(169,346,142,30,"#c4be9e");ellipse(169,339,123,21,"#9fb5a0");
+ // rune on center back platform
+ g.strokeStyle="#8a9584";g.lineWidth=3;g.beginPath();g.arc(436,260,25,0,Math.PI*2);g.moveTo(436,239);g.lineTo(436,282);g.moveTo(426,250);g.lineTo(446,270);g.stroke();
+ rect(20,20,231,48,"#15263bdc");rect(23,23,225,42,"#e7e4d5");label("GEGNER · "+people[chosen].name.toUpperCase(),34,40,13);label("MIDGARD-KUGEL  ◈",34,56,12,"#8d4a40");
+}
+function ball(x,y,r=10,angle=0){
+ g.save();g.translate(x,y);g.rotate(angle);
+ ellipse(0,0,r+2,r+2,"#293343");
+ ellipse(0,0,r,r,"#b95046");
+ poly([[-r+2,-r/3],[r-2,-r/3],[r-2,4],[-r+2,4]],"#dfb873");
+ line(-r+3,0,r-3,0,3,"#253343");
+ poly([[0,-r*.69],[r*.41,-r*.15],[0,r*.37],[-r*.41,-r*.15]],"#e9e9ce");
+ poly([[0,-r*.32],[r*.18,-r*.12],[0,r*.12],[-r*.18,-r*.12]],"#437782");
+ ellipse(-r*.31,-r*.43,r*.13,r*.13,"#f4d8bb");g.restore();
+}
+function person(p,cx,foot,phase,t=0){
+ // All sprites face front-left (towards player), never from behind.
+ g.save();g.translate(Math.round(cx),Math.round(foot));g.scale(1.55,1.55);
+ const bob=phase==="idle"?Math.sin(t*4)*1.2:0;
+ g.translate(0,-bob);
+ const readiness=phase==="pose"?1:phase==="throw"?1:0;
+ const toss=phase==="throw"?ease(clamp((t-.15)/.48)):0;
+ const wind=phase==="throw"?ease(clamp(t/.18))*(1-ease(clamp((t-.23)/.25))):0;
+ const lean=readiness?-.07-.08*wind+.16*toss:0;
+ g.rotate(lean);
+ const edge="#242535",boot="#1a2230",light="#f3d6b0";
+ // legs, left shoe points to lower left
+ poly([[-14,-28],[-2,-28],[-5,-4],[-20,-3]],p.trouser);
+ poly([[3,-29],[15,-31],[17,-5],[4,-3]],p.trouser);
+ rect(-21,-6,21,7,boot);rect(3,-6,20,7,boot);
+ rect(-15,-52,28,29,edge);
+ poly([[-16,-55],[13,-54],[18,-27],[-15,-27]],p.accent);
+ rect(-10,-54,5,25,"#d3d2c2");
+ rect(4,-51,4,21,"#e0bb86");
+ // neck
+ rect(-4,-64,9,10,p.skin);
+ // far left arm
+ line(-15,-50,-20,-32,10,edge);line(-15,-50,-20,-32,7,p.accent);
+ ellipse(-22,-29,5,6,p.skin);
+ // throwing right arm: from shoulder toward the left as it releases
+ let handX=19,handY=-36;
+ if(readiness){handX=26;handY=-65}
+ if(phase==="throw"){handX=lerp(26,-36,toss);handY=lerp(-65,-74+21*toss,toss)}
+ line(13,-52,handX,handY,11,edge);line(13,-52,handX,handY,8,p.accent);ellipse(handX,handY,5.6,5.5,p.skin);
+ if(phase!=="throw"||t<.39)ball(handX-2,handY-8,5.5,0);
+ // head angled towards lower left
+ ellipse(0,-77,17,19,edge);ellipse(-1,-77,14.2,16.3,p.skin);
+ // hair variants
+ if(p.style===0){
+ poly([[-16,-86],[-16,-97],[-8,-92],[-3,-103],[5,-93],[15,-94],[17,-77],[7,-87],[-2,-88],[-9,-81]],p.hair);
+ rect(4,-93,4,9,"#bd4542");
+ }else if(p.style===1){
+ poly([[-16,-86],[-15,-96],[-3,-102],[13,-94],[17,-84],[9,-88],[-1,-86]],p.hair);
+ poly([[-21,-96],[13,-103],[21,-96],[18,-91],[-20,-89]],"#bd8f45");
+ rect(-20,-91,29,4,"#735a51");
+ }else if(p.style===2){
+ poly([[-16,-87],[-13,-98],[-1,-102],[12,-95],[18,-84],[12,-76],[6,-88],[-8,-88],[-11,-73]],p.hair);
+ ellipse(17,-71,9,11,p.hair);
+ }else{
+ poly([[-15,-84],[-16,-99],[4,-105],[17,-94],[16,-84],[9,-89],[-8,-86]],p.hair);
+ poly([[-20,-98],[-13,-108],[7,-110],[20,-98],[19,-91],[-20,-91]],"#7e5564");
+ rect(-18,-95,35,6,"#dbb7bf");
+ }
+ rect(-10,-77,4,3,"#293343");rect(4,-79,4,3,"#293343");
+ rect(-4,-67,7,2,"#9c675f");
+ if(p.style===3)rect(10,-68,7,9,p.hair);
+ if(phase==="pose"||phase==="throw")poly([[-15,-37],[-8,-25],[4,-36]],"#e2c7a5");
+ g.restore();
+}
+function render(t){
+ background(t);
+ const p=people[chosen], kind=mode;
+ let phase="idle",local=0,flight=false,px=0,py=0;
+ if(kind==="pose"){phase=t<.25?"idle":"pose";local=t/1.25}
+ if(kind==="throw"){phase="throw";local=t}
+ if(kind==="full"){if(t<.7){phase="idle"}else if(t<1.5){phase="pose"}else {phase="throw";local=t-1.5}}
+ // ball flight begins after release, arcs from opponent platform to player's side
+ const flightT=phase==="throw"?clamp((local-.40)/.88):-1;
+ if(flightT>=0){const q=ease(flightT);px=480+(175-480)*q;py=151+(310-151)*q-73*Math.sin(Math.PI*q);flight=true}
+ person(p,465,264,phase,phase==="idle"?t:local);
+ if(flight&&flightT<1){ellipse(px+2,py+8,8,3,"#313b4760");ball(px,py,lerp(9,13,flightT),flightT*9)}
+ if(flight&&flightT>=1){ellipse(173,325,18+Math.sin((local-1.28)*15)*4,6,"#fff7b8a8");for(let i=0;i<9;i++){let a=i*Math.PI*2/9+local,r=24+Math.sin(local*12+i)*5;rect(173+Math.cos(a)*r,315+Math.sin(a)*r,5,5,"#f8e1a1")}}
+ // viewer silhouette as neutral foreground indicator (no player NPC recreation)
+ ellipse(160,355,44,13,"#27364750");
+ poly([[108,399],[110,374],[125,359],[142,352],[173,359],[198,378],[199,400]],"#263d50");
+ poly([[129,366],[129,339],[139,323],[157,320],[176,332],[176,362]],"#354f60");
+ ellipse(151,315,25,22,"#303a45");
+ poly([[127,318],[134,295],[162,290],[178,303],[171,311]],"#445463");
+ rect(0,398,W,2,"#668376");
+}
+function description(){
+ if(mode==="idle")return "Bereit · Standbild";
+ if(mode==="pose")return "Gegner geht in Kampfpose";
+ if(mode==="throw")return "Midgard-Kugel wird geworfen";
+ return "Auftritt → Kampfpose → Midgard-Kugelwurf";
+}
+function sync(){document.getElementById("status").textContent=description()+(paused?" · Pausiert":"");document.getElementById("bar").style.width=(mode==="idle"?0:clamp(elapsed/(durations[mode]/1000))*100)+"%"}
+function loopFrame(now){
+ const dt=last?(now-last)/1000:0;last=now;
+ if(!paused&&mode!=="idle"){elapsed+=Math.min(dt,.10)*speed;if(elapsed>=durations[mode]/1000){if(repeat){elapsed=0}else{elapsed=durations[mode]/1000;paused=true}}}
+ const displayT=mode==="idle"?now/1000:elapsed;
+ render(displayT);sync();raf=requestAnimationFrame(loopFrame);
+}
+function run(m){mode=m;elapsed=0;paused=false;last=0;let messages={idle:"Ein Herausforderer stellt sich dir!",pose:people[chosen].name+" macht sich kampfbereit!",throw:people[chosen].name+" wirft eine Midgard-Kugel!",full:people[chosen].name+" fordert dich zum Kampf!"};document.getElementById("dialog").textContent=messages[m];document.getElementById("pause").textContent="Pause"}
+document.getElementById("start").onclick=()=>run("pose");
+document.getElementById("throw").onclick=()=>run("throw");
+document.getElementById("full").onclick=()=>run("full");
+document.getElementById("reset").onclick=()=>run("idle");
+document.getElementById("pause").onclick=()=>{if(mode==="idle")return;paused=!paused;last=0;document.getElementById("pause").textContent=paused?"Fortsetzen":"Pause"};
+document.getElementById("slow").onclick=()=>{speed=speed===1?.5:speed===.5?1.5:1;document.getElementById("slow").textContent="Tempo: "+speed+"×"};
+document.getElementById("loop").onclick=()=>{repeat=!repeat;document.getElementById("loop").textContent="Wiederholen: "+(repeat?"Ein":"Aus")};
+const parent=document.getElementById("trainers");
+people.forEach((p,i)=>{const b=document.createElement("button");b.textContent=p.name;b.setAttribute("aria-pressed",String(chosen===i));b.onclick=()=>{chosen=i;for(const child of parent.children)child.setAttribute("aria-pressed",String(child===b));run("idle")};parent.appendChild(b)});
+requestAnimationFrame(loopFrame);
+</script>
+</body>
+</html>
