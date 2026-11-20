@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#091a2b">
+<title>Monsters of Midgard – Spieler-Kampfanimation</title>
+<style>
+*{box-sizing:border-box}html{background:#081727}body{margin:0;color:#edf5fa;font-family:system-ui,-apple-system,sans-serif}.app{max-width:600px;margin:auto;padding:12px}.mast{display:flex;align-items:end;justify-content:space-between;gap:10px;padding:8px 2px 12px}.kicker{color:#d9b57d;font-size:11px;font-weight:800;letter-spacing:.1em}h1{font-size:20px;line-height:1.16;margin:4px 0 0}.version{font-size:11px;color:#a8bdcc}.frame{border:2px solid #cda66f;border-radius:14px;overflow:hidden;box-shadow:0 12px 30px #0005;background:#10263b}canvas{display:block;width:100%;aspect-ratio:390/560;image-rendering:pixelated}.controls{padding:12px;display:grid;gap:11px;background:#132e44}.row{display:flex;gap:8px}button,select{flex:1;min-width:0;border:1px solid #7394ac;background:#2c516c;color:#f3fbff;border-radius:9px;font-weight:650;font-size:13px;min-height:44px;padding:8px}button.primary{background:#447391;border-color:#d9b67e}button:active{filter:brightness(1.2)}input[type=range]{width:100%;accent-color:#eac187}.meta{display:flex;justify-content:space-between;color:#acc6d6;font-size:12px;gap:12px}#status{font-size:12px;color:#bed5e3;min-height:16px}details{margin-top:13px;background:#132e44;border-radius:10px;padding:10px}summary{cursor:pointer;color:#e3bd85;font-weight:700;font-size:13px}.sources{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.sources img{width:100%;border-radius:6px}.sources p{font-size:12px;margin:4px 0 8px}.note{font-size:12px;line-height:1.5;color:#9db7c7;margin:11px 2px}@media(max-width:400px){.app{padding:6px}button,select{font-size:11px;padding:6px}}
+</style>
+</head>
+<body><main class="app">
+<header class="mast"><div><div class="kicker">MONSTERS OF MIDGARD</div><h1>Spieler-Kampfanimation</h1></div><span class="version">Neustart V1 · iPhone</span></header>
+<section class="frame">
+<canvas id="scene" width="780" height="1120" aria-label="Kampfanimation"></canvas>
+<div class="controls"><div id="status" role="status">Lade die beiden Spielerfiguren …</div>
+<div class="row"><select id="hero" aria-label="Charakter"><option value="boy">Held</option><option value="girl">Heldin</option></select><button class="primary" id="play">▶ Start</button><button id="pause">⏸ Pause</button><button id="reset">↺</button></div>
+<input id="timeline" type="range" min="0" max="3200" step="20" value="0" aria-label="Animationsverlauf">
+<div class="meta"><span id="phase">Bereit</span><span id="clock">0,0 / 3,2 s</span></div>
+<div class="row"><button id="prev">◀ Pose</button><button id="next">Pose ▶</button></div>
+</div></section>
+<details><summary>Originalquellen der beiden Figuren anzeigen</summary><div class="sources">
+<div><p>Held</p><img loading="lazy" alt="Originalvorlage Held" src="https://d2ol7oe51mr4n9.cloudfront.net/user_36zODdDC4hrOKcoJO07kB6LwKR4/4f83ab0f-2e7e-432f-9b35-68ab85b5adb8.jpg"></div>
+<div><p>Heldin</p><img loading="lazy" alt="Originalvorlage Heldin" src="https://d2ol7oe51mr4n9.cloudfront.net/user_36zODdDC4hrOKcoJO07kB6LwKR4/c41a4370-20c5-4959-8351-c4f64867b16e.jpg"></div>
+</div></details>
+<p class="note">V1 zeigt die Figuren aus deinen aktuellen Referenzblättern. Die einfache Wurfanimation bewegt und dreht ein freigestelltes Kampfsprite je Figur; eigenständige gezeichnete Zwischenposen sind noch nicht vorhanden. Der Ball landet auf der Spielerplattform links unten.</p>
+</main>
+<script>
+'use strict';
+(()=>{const $=id=>document.getElementById(id),canvas=$('scene'),c=canvas.getContext('2d');
+const src={boy:'https://d2ol7oe51mr4n9.cloudfront.net/user_36zODdDC4hrOKcoJO07kB6LwKR4/8f31f732-6102-4420-b999-4242e48d46ab.png',girl:'https://d2ol7oe51mr4n9.cloudfront.net/user_36zODdDC4hrOKcoJO07kB6LwKR4/19b79c82-f050-4718-9ac3-0c7fca5f04bb.png'};
+let hero='boy',t=0,playing=false,frameRequest=0,lastTime=0;
+const sprites={},loaded={boy:false,girl:false};
+const keys=[0,.52,1.07,1.63,2.12,2.64,3.2],names=['Bereit','Ausholen','Kugel greifen','Abwurf','Rückführung','Kampfpose'];
+const pose=()=>{for(let i=0;i<6;i++)if(t<keys[i+1])return i;return 5};
+const oval=(x,y,rx,ry,fill)=>{c.fillStyle=fill;c.beginPath();c.ellipse(x,y,rx,ry,0,0,2*Math.PI);c.fill()};
+for(const k of ['boy','girl']){const i=new Image();sprites[k]=i;i.onload=()=>{loaded[k]=true;$('status').textContent=loaded.boy&&loaded.girl?'Beide Figuren geladen · bereit':'Erste Figur geladen …';draw()};i.onerror=()=>{$('status').textContent='Bild konnte nicht geladen werden. Internetverbindung prüfen.'};i.src=src[k]}
+function background(){const g=c.createLinearGradient(0,0,0,860);g.addColorStop(0,'#75b8d3');g.addColorStop(.56,'#c5e5d3');g.addColorStop(1,'#699d79');c.fillStyle=g;c.fillRect(0,0,780,855);
+c.fillStyle='#85a2b5';c.beginPath();c.moveTo(0,538);[[108,346],[210,470],[303,242],[427,468],[559,335],[664,478],[780,366]].forEach(v=>c.lineTo(...v));c.lineTo(780,663);c.lineTo(0,663);c.fill();c.fillStyle='#edf7f8';c.beginPath();c.moveTo(269,301);c.lineTo(303,242);c.lineTo(341,306);c.lineTo(304,288);c.fill();c.fillStyle='#609875';c.fillRect(0,667,780,187);
+oval(616,452,127,36,'#3b715e');oval(616,443,117,26,'#9fcc95');oval(281,758,200,57,'#3e765d');oval(281,746,189,43,'#afd49a')}
+function trainer(){if(!loaded[hero])return;let p=pose(),i=sprites[hero],rot=[0,-.08,-.12,.09,.02,0][p],x=[0,12,4,22,5,0][p],y=[0,-9,-17,-7,0,0][p];let height=306,width=height*i.naturalWidth/i.naturalHeight;c.save();c.beginPath();c.rect(0,0,780,855);c.clip();c.translate(247+x,801+y+Math.sin(t*5)*2);c.rotate(rot);c.imageSmoothingEnabled=false;c.drawImage(i,-width/2,-height,width,height);c.restore()}
+function projectile(){if(t<1.63||t>2.80)return;let x,y,r=12,a=1;if(t<2.38){let p=(t-1.63)/.75,q=1-p;x=q*q*335+2*q*p*418+p*p*359;y=q*q*554+2*q*p*404+p*p*719}else{let p=(t-2.38)/.42;x=359;y=719;r=12+38*p;a=1-p}c.save();c.globalAlpha=a;oval(x,y,r+8,r+8,'#81deff66');oval(x,y,r,r,'#1b3550');c.strokeStyle='#e5bd75';c.lineWidth=4;c.beginPath();c.arc(x,y,r,0,2*Math.PI);c.stroke();c.strokeStyle='#69daf7';c.lineWidth=3;c.beginPath();c.moveTo(x,y-r*.7);c.lineTo(x+r*.54,y);c.lineTo(x,y+r*.7);c.lineTo(x-r*.54,y);c.closePath();c.stroke();c.restore()}
+function dialogue(){c.fillStyle='#142e43';c.fillRect(0,850,780,270);c.fillStyle='#d0a975';c.fillRect(0,850,780,8);c.fillStyle='#c5d5dd';c.fillRect(16,874,748,224);c.fillStyle='#f5f8f4';c.fillRect(25,883,730,206);c.fillStyle='#173950';c.font='bold 28px system-ui';const who=hero==='boy'?'Der Held':'Die Heldin';c.fillText(pose()<2?who+' macht sich bereit.':pose()<4?who+' wirft die Midgard-Kugel!':who+' ist kampfbereit.',45,955,680);c.fillStyle='#7e92a1';c.font='20px system-ui';c.fillText('Spieler-Kampfansicht · Midgard',45,1015,680)}
+function draw(){background();trainer();projectile();dialogue();$('phase').textContent='Pose '+(pose()+1)+'/6 · '+names[pose()];$('clock').textContent=t.toFixed(1).replace('.',',')+' / 3,2 s';$('timeline').value=Math.round(t*1000)}
+function stop(){playing=false;lastTime=0;if(frameRequest)cancelAnimationFrame(frameRequest);frameRequest=0}
+function tick(now){if(!playing)return;if(lastTime)t+=Math.min((now-lastTime)/1000,.06);lastTime=now;if(t>=3.2){t=3.2;stop();draw();return}draw();frameRequest=requestAnimationFrame(tick)}
+$('play').onclick=()=>{stop();if(t>=3.19)t=0;playing=true;frameRequest=requestAnimationFrame(tick)};
+$('pause').onclick=stop;$('reset').onclick=()=>{stop();t=0;draw()};$('hero').onchange=e=>{stop();hero=e.target.value;t=0;draw()};$('timeline').oninput=e=>{stop();t=+e.target.value/1000;draw()};$('prev').onclick=()=>{stop();t=keys[Math.max(0,pose()-1)]+.01;draw()};$('next').onclick=()=>{stop();t=keys[Math.min(5,pose()+1)]+.01;draw()};draw()
+})();
+</script></body></html>
