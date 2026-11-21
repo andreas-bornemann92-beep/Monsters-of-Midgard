@@ -30,7 +30,7 @@ class IntegratedBattleTests(unittest.TestCase):
         game=IntegratedBattle(a,b)
         game.play_turn("m","m")
         game.play_turn("m","m")
-        self.assertEqual(a.hp,130)
+        self.assertEqual([e["amount"] for e in game.log if e["kind"]=="residual" and e["target"]=="A"],[10,20])
 
     def test_status_infliction_sync(self):
         a=build("A",effect="burn",power=0,category="status")
