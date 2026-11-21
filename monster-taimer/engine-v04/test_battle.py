@@ -54,7 +54,7 @@ class BattleTests(unittest.TestCase):
         self.assertEqual(a.hp,100)
 
     def test_status_residual(self):
-        a,b=monster("A",power=0),monster("B",power=0)
+        a,b=monster("A",power=0),monster("B",power=0,effect="heal",category="status")
         a.status="burn"
         g=Battle(a,b)
         g.play_turn("m1","m1")
