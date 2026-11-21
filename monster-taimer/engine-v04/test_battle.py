@@ -47,7 +47,7 @@ class BattleTests(unittest.TestCase):
         self.assertEqual(next(x["actor"] for x in g.log if x["kind"]=="used"),"A")
 
     def test_healing_capped(self):
-        a,b=monster("A",effect="heal",category="status",power=0),monster("B",power=0)
+        a,b=monster("A",effect="heal",category="status",power=0),monster("B",power=0,effect="heal",category="status")
         a.hp=90
         g=Battle(a,b)
         g.play_turn("m1","m1")
