@@ -27,6 +27,7 @@ d.actors=[{x:23,y:12,name:'Waldhüter',message:'Hier beginnen die alten Wege von
 d.texts=[{x:35,y:8,name:'Runenstein',message:'Die Zeichen auf dem Stein schimmern im Nebel.'},{x:6,y:14,name:'Wegweiser',message:'Westen: Fjordsiedlung.'}];}
 for(let a of d.actors)solid(a.x,a.y);return d}
 maps.village=build('village');maps.forest=build('forest');
+const heroAtlas=new Image();heroAtlas.src='https://d2ol7oe51mr4n9.cloudfront.net/user_36zODdDC4hrOKcoJO07kB6LwKR4/0a0752a0-0ad3-4703-b298-b5df7300afe9.png';
 const roomImage=new Image();roomImage.src='https://d2ol7oe51mr4n9.cloudfront.net/user_36zODdDC4hrOKcoJO07kB6LwKR4/ea665470-f897-49a5-89b2-0a3362d6854f.jpg';
 const room={terrain:Array.from({length:32},()=>Array(48).fill('floor')),solid:new Set(),props:[],actors:[],texts:[]};
 const blockRoom=(x1,y1,x2,y2)=>{for(let y=y1;y<=y2;y++)for(let x=x1;x<=x2;x++)room.solid.add(x+','+y)};
@@ -118,6 +119,15 @@ document.addEventListener('touchmove',e=>{if(pointer!==null&&e.cancelable)e.prev
 document.addEventListener('gesturestart',e=>{if(e.cancelable)e.preventDefault()},{passive:false});
 function joy(e){const r=stick.getBoundingClientRect(),lim=r.width*.25;let dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,k=Math.min(1,lim/Math.max(1,Math.hypot(dx,dy)));dx*=k;dy*=k;knob.style.transform='translate('+dx+'px,'+dy+'px)';axis=Math.hypot(dx,dy)<lim*.2?null:(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'))}stick.addEventListener('pointerdown',e=>{e.preventDefault();pointer=e.pointerId;stick.setPointerCapture(pointer);joy(e)});stick.addEventListener('pointermove',e=>{if(e.pointerId===pointer)joy(e)});for(let ev of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(ev,e=>{if(e.pointerId===pointer){pointer=null;axis=null;knob.style.transform='translate(0,0)'}});
 const keys=new Set(),dir={arrowup:'up',w:'up',arrowdown:'down',s:'down',arrowleft:'left',a:'left',arrowright:'right',d:'right'};addEventListener('keydown',e=>{if(dir[e.key.toLowerCase()]){keys.add(dir[e.key.toLowerCase()]);e.preventDefault()}if(e.key==='Enter'||e.key===' '){act();e.preventDefault()}if(e.key==='Shift')running=true});addEventListener('keyup',e=>{if(dir[e.key.toLowerCase()])keys.delete(dir[e.key.toLowerCase()]);if(e.key==='Shift')running=false});
+function drawAnimatedHero(x,y,dir,now,width){
+ if(!heroAtlas.complete||!heroAtlas.naturalWidth){actor(x,y,dir,0,false);return}
+ const row=({down:0,right:1,up:2,left:3})[dir]??0;
+ const isWalk=Boolean(axis||keys.size)&&!paused&&!talking;
+ const col=isWalk?4+(Math.floor(now/(run?85:120))%6):(Math.floor(now/340)%4);
+ const height=width*1.2;
+ ctx.fillStyle='#1218205b';ctx.beginPath();ctx.ellipse(x+16,y+30,width*.24,width*.064,0,0,Math.PI*2);ctx.fill();
+ ctx.drawImage(heroAtlas,col*80,row*104,80,104,x+16-width/2,y+32-height,width,height);
+}
 function render(now){let dt=Math.min(45,now-last);last=now;if(!paused){if(hero.progress<1){hero.progress=Math.min(1,hero.progress+dt/(running?90:150));if(hero.progress===1){hero.x=hero.toX;hero.y=hero.toY;door()}}lock-=dt;const d=axis||Array.from(keys).at(-1);if(d&&lock<=0&&hero.progress===1){move(d);lock=24}}
 const bounds=canvas.getBoundingClientRect(),cw=Math.round(bounds.width),ch=Math.round(bounds.height),scale=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.round(cw*scale)||canvas.height!==Math.round(ch*scale)){canvas.width=Math.round(cw*scale);canvas.height=Math.round(ch*scale)}ctx.setTransform(scale,0,0,scale,0,0);ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,cw,ch);
 const x=hero.fromX+(hero.toX-hero.fromX)*hero.progress,y=hero.fromY+(hero.toY-hero.fromY)*hero.progress;
@@ -128,7 +138,7 @@ if(zone==='room'){
  ctx.save();ctx.translate(dx,dy);ctx.scale(zoom,zoom);
  if(roomImage.complete&&roomImage.naturalWidth>0){ctx.drawImage(roomImage,0,0,rw,rh);drawWolfRug();}
  else{drawRoomFallback();}
- ctx.save();ctx.translate(x*T+16,y*T+16);ctx.scale(1.85,1.85);actor(-16,-16,hero.dir,hero.progress<1?hero.step:0,false);ctx.restore();
+ drawAnimatedHero(x*T,y*T,hero.dir,now,82);
  ctx.restore();
 }else{
  const cx=Math.max(0,Math.min(W*T-cw,x*T-cw/2+16)),cy=Math.max(0,Math.min(H*T-ch,y*T-ch/2+16));
@@ -137,7 +147,7 @@ if(zone==='room'){
  for(let j=y0;j<y1;j++)for(let i=x0;i<x1;i++)ground(i,j,current().terrain[j][i]);
  let draws=current().props.map(o=>({z:o.y+o.h,fn:()=>prop(o)}));
  for(let n of current().actors)draws.push({z:n.y+1,fn:()=>actor(n.x,n.y,'down',0,true)});
- draws.push({z:y+1,fn:()=>actor(x,y,hero.dir,hero.progress<1?hero.step:0,false)});
+ draws.push({z:y+1,fn:()=>drawAnimatedHero(x*T,y*T,hero.dir,now,37)});
  draws.sort((a,b)=>a.z-b.z);for(let d of draws)d.fn();ctx.restore();
 }
 requestAnimationFrame(render)}
