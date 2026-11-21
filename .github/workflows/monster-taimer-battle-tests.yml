@@ -1,0 +1,21 @@
+name: Monster Taimer battle engine tests
+on:
+  push:
+    branches:
+      - dev/monster-taimer-battle-engine-v04
+  pull_request:
+    paths:
+      - 'monster-taimer/engine-v04/**'
+      - '.github/workflows/monster-taimer-battle-tests.yml'
+  workflow_dispatch:
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run battle regression suite
+        run: python -m unittest discover -s monster-taimer/engine-v04 -p 'test_*.py' -v
