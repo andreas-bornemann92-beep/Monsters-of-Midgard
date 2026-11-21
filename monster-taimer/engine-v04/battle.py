@@ -5,10 +5,16 @@ Its Gen-V-oriented rules are intentionally partial and explicitly tested.
 """
 from dataclasses import dataclass, field
 from random import Random
+from pathlib import Path
+import json
 
-TYPES = frozenset(("Normal","Feuer","Wasser","Elektro","Pflanze","Eis","Kampf","Gift","Boden","Flug","Psycho","Käfer","Gestein","Geist","Drache","Unlicht","Stahl","Fee"))
-# Explicit subset for smoke tests; full canonical chart must be imported before release.
-TYPE_OVERRIDES = {("Feuer","Pflanze"):2,("Feuer","Wasser"):0.5,("Wasser","Feuer"):2,("Wasser","Pflanze"):0.5,("Elektro","Wasser"):2,("Elektro","Boden"):0,("Normal","Geist"):0,("Kampf","Geist"):0,("Drache","Fee"):0,("Gift","Fee"):2,("Stahl","Fee"):2,("Geist","Stahl"):0.5,("Unlicht","Stahl"):0.5}
+# Canon source copied verbatim from MT-TYPES-001 V0.1; never silently replace.
+_TYPE_SOURCE = Path(__file__).with_name("canon") / "MT-TYPES-001-V0.1.json"
+_TYPE_DATA = json.loads(_TYPE_SOURCE.read_text(encoding="utf-8"))
+TYPES = frozenset(_TYPE_DATA["types"])
+TYPE_CHART = _TYPE_DATA["attack_to_defense"]
+if len(TYPES) != 18 or set(TYPE_CHART) != TYPES or any(set(row) != TYPES for row in TYPE_CHART.values()):
+    raise ValueError("Canonical 18x18 type chart is incomplete")
 
 @dataclass(frozen=True)
 class Move:
@@ -94,7 +100,7 @@ class Battle:
         base = ((2 * actor.level // 5 + 2) * move.power * atk // defense) // 50 + 2
         effectiveness = 1.0
         for t in target.types:
-            effectiveness *= TYPE_OVERRIDES.get((move.type,t),1.0)
+            effectiveness *= TYPE_CHART[move.type][t]
         if effectiveness == 0:
             return 0
         stab = 1.5 if move.type in actor.types else 1.0
