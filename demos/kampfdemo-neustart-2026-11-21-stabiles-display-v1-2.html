@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a3040">
+<title>Monsters of Midgard – Stabile iPhone-Kampfoberfläche V1.2</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:#101e29}
+button{font:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:3px solid #ffda84;outline-offset:2px}
+[hidden]{display:none!important}
+#game{height:100vh;height:100dvh;width:100%;max-width:600px;margin:0 auto;display:flex;flex-direction:column;overflow:hidden;color:white;background:#1c3040}
+#scene{position:relative;flex:1 1 0;min-height:0;overflow:hidden;background:linear-gradient(#92b2c0,#cbdcd4 48%,#72967e)}
+#land{position:absolute;inset:0;width:100%;height:100%}
+#title{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translateX(-50%);padding:5px 12px;white-space:nowrap;border-radius:20px;border:1px solid #e3e9dc80;background:#2f5161c7;font-size:10px;letter-spacing:.13em;font-weight:800}
+.card{position:absolute;z-index:2;padding:8px;min-width:0;color:#283f49;background:#f4f2e8;border:2px solid #80969c;border-radius:10px;box-shadow:0 4px 12px #28463c38}
+.card:before{content:"";position:absolute;inset:0 0 auto;height:3px;border-radius:8px 8px 0 0;background:linear-gradient(90deg,#537b85,#cfb985,#537b85)}
+#foecard{top:calc(env(safe-area-inset-top,0px) + 45px);left:2%;width:64%}
+#hero-card{bottom:2%;right:2%;width:68%}
+.head{display:flex;justify-content:space-between;align-items:center;gap:4px;font-size:clamp(10px,2.8vw,13px);font-weight:850;white-space:nowrap}.head>span:first-child{overflow:hidden;text-overflow:ellipsis}.head>span:last-child{flex-shrink:0}
+.sexmale{color:#3980b4}.sexfemale{color:#c25b9e}
+.barrow{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:10px;font-weight:800}
+.track{height:10px;flex:1;padding:2px;background:#4f6870;border-radius:10px;overflow:hidden}
+.bar{height:100%;width:100%;border-radius:10px;background:#62be78;transition:width .5s,background .2s}
+.foot{display:flex;align-items:center;justify-content:space-between;margin-top:5px;font-size:11px;font-weight:700}
+.tag{border-radius:4px;background:#dcd0a0;padding:1px 5px;font-size:10px}.tag.par{background:#e4c876}.tag.ok{background:#c8dfdb}.tag.ko{background:#e4aaaa}
+.exp{height:5px;flex:1;border-radius:10px;overflow:hidden;background:#b4c2c5}.exp div{height:100%;background:#48a4cb}
+.orbs{display:flex;justify-content:flex-end;gap:3px;margin-top:5px}
+.orb{width:11px;height:11px;border:1px solid #496577;border-radius:50%;display:grid;place-items:center;font-family:Georgia,serif;font-size:8px;background:radial-gradient(circle at 28% 19%,#d8f7e7,#54b3a2 46%,#275876);color:#edfbed}
+.orb.empty{background:#a7b6bd;color:#e1e7e8}.orb.ko{background:#68737b;color:#ddd}.orb.par{border-color:#aa8d33;background:radial-gradient(circle at 25% 20%,#fff4bc,#cfb04b 60%,#7b6535)}.orb:focus-visible{outline:2px solid #f9d78b}
+.sprite{position:absolute;pointer-events:none;transform-origin:50% 100%;filter:drop-shadow(0 5px 2px #264d3739)}
+.sprite svg{display:block;width:100%;height:100%}
+#foe{width:26%;aspect-ratio:110/135;top:37%;right:8%}
+#hero{width:31%;aspect-ratio:124/146;bottom:11%;left:3%}
+#spark{position:absolute;top:43%;right:19%;font-size:58px;opacity:0;pointer-events:none;color:#fff3a1;text-shadow:0 0 16px #e8b84d}
+#panel{flex:0 0 auto;background:linear-gradient(#345366,#172b3a);border-top:4px solid #ccb184;padding:10px 11px max(10px,env(safe-area-inset-bottom,0px))}
+#msg{display:flex;align-items:center;min-height:36px;padding:7px 11px;border:2px solid #b7cec5;border-radius:9px;background:#f2f1e9;color:#293f4a;font-size:12px;font-weight:700;line-height:1.3}
+#main,#submenu{margin-top:9px}
+.toprow{display:flex;justify-content:center}
+.bottomrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:7px}
+.btn{min-height:46px;border:2px solid #ffffff55;border-radius:10px;box-shadow:inset 0 1px #ffffff38,0 3px #11222d;color:white;font-size:13px;font-weight:800;background:#486477}
+.btn:active:not(:disabled){transform:translateY(2px);filter:brightness(1.12)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.fight{width:58%;font-size:16px;background:#945b48}.bag{background:#79644a}.run{background:#4b6782}.party{background:#3b756e}
+#choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.choice{min-height:51px;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;padding:5px;font-size:12px}
+.choice small{font-size:10px;font-weight:500}.choice.selected{outline:2px solid #f7d694;outline-offset:1px}
+#moveinfo{display:flex;justify-content:space-between;gap:8px;margin-top:7px;border-radius:7px;padding:7px 10px;background:#263f50;font-size:11px}.status-caption{font-size:8px;color:#65757c;letter-spacing:.08em;font-weight:800}.status-foot{display:flex;align-items:center;justify-content:space-between;gap:5px;margin-top:5px}.status-foot .orbs{margin-top:0}.card .foot{margin-top:4px}.barrow{margin-top:6px}.card{border-color:#798b91;background:linear-gradient(145deg,#fffdf2,#e7e9e2);box-shadow:0 2px 0 #dcc69c inset,0 4px 12px #28463c40}.btn{transition:filter .12s ease}.btn.selected{outline:2px solid #ffe1a1;outline-offset:1px}#msg{font-size:12px}#footer{letter-spacing:.05em}
+.subactions{display:flex;gap:7px;margin-top:7px}.subactions .btn{flex:1;min-height:37px;font-size:12px}#use{background:#89704e}#back{background:#526b7c}
+#footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:#adc6cc;font-size:9px;letter-spacing:.08em;font-weight:700}#footer button{color:inherit;border:0;background:none;font-size:10px;text-decoration:underline}
+.strike{animation:strike .46s ease}.hit{animation:hit .48s ease}.spark{animation:spark .5s ease}
+@keyframes strike{50%{transform:translate(21px,-12px)}}@keyframes hit{20%,65%{filter:brightness(2);transform:translateX(7px)}45%{transform:translateX(-5px)}}@keyframes spark{0%{opacity:0;transform:scale(.3)}45%{opacity:1;transform:scale(1.5)}100%{opacity:0;transform:scale(2)}}
+@media(max-height:660px){#panel{padding-top:7px}#main,#submenu{margin-top:7px}.btn{min-height:40px}.choice{min-height:42px}#footer{margin-top:6px}#foecard{top:calc(env(safe-area-inset-top,0px) + 33px)}}
+@media(prefers-reduced-motion:reduce){.strike,.hit,.spark{animation:none}.bar{transition:none}}
+
+/* V1.2: stabile Bildschirmgeometrie – Menüs verändern niemals die Szenenhöhe */
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
+#game{height:100vh;height:100dvh;max-height:none}
+#scene{flex:1 1 auto;min-height:0}
+#panel{
+  height:clamp(246px,39dvh,316px);
+  flex:0 0 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  padding:8px 11px max(8px,env(safe-area-inset-bottom,0px));
+  overflow:hidden;
+}
+#msg{min-height:37px;max-height:50px;flex:0 0 auto;overflow-y:auto;font-size:12px;line-height:1.2}
+#main,#submenu{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;margin-top:9px}
+#main::-webkit-scrollbar,#submenu::-webkit-scrollbar{display:none}
+#footer{flex:0 0 auto;margin-top:6px;padding-top:4px;border-top:1px solid #b6c9ce30}
+#panel .btn{min-height:45px;border-radius:11px;box-shadow:inset 0 1px #ffffff40,0 2px #122530;letter-spacing:.01em}
+#panel .btn:focus-visible{outline:3px solid #ffe4a0;outline-offset:1px}
+.fight{background:linear-gradient(145deg,#a96d54,#7f493d);border-color:#e3bea4!important}
+.bag{background:linear-gradient(145deg,#927953,#6d563e)}
+.run{background:linear-gradient(145deg,#65829e,#3a536f)}
+.party{background:linear-gradient(145deg,#468e84,#2f6564)}
+#choices{gap:6px}
+.choice{min-height:44px;padding:6px;border-radius:10px}
+.subactions{margin-top:6px}
+#moveinfo{margin-top:6px;padding:6px 9px}
+#panel .subactions .btn{min-height:35px}
+.card{border-radius:12px}
+#hero-card{bottom:2%;right:2%}
+@media(max-height:700px){
+  #panel{height:clamp(227px,40dvh,280px);padding-top:6px}
+  #panel .btn{min-height:40px}
+  #panel .choice{min-height:39px}
+  #panel .subactions .btn{min-height:33px}
+  #main,#submenu{margin-top:6px}
+  .bottomrow{margin-top:6px}
+  #msg{min-height:33px}
+}
+@media(max-height:570px){
+  #panel{height:clamp(212px,42dvh,245px)}
+  #panel .btn{min-height:36px}
+  #panel .choice{min-height:37px}
+  #title{display:none}
+  #foecard{top:calc(env(safe-area-inset-top,0px) + 10px)}
+  #foe{top:34%;width:21%}
+  #hero{width:25%}
+}
+
+</style>
+</head>
+<body>
+<main id="game">
+<section id="scene" aria-label="Kampfszene">
+<svg id="land" viewBox="0 0 390 540" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#85a9bb"/><stop offset=".6" stop-color="#d3dfd3"/><stop offset="1" stop-color="#729884"/></linearGradient><radialGradient id="stone"><stop stop-color="#d5dbbb"/><stop offset="1" stop-color="#89a48b"/></radialGradient></defs>
+<rect width="390" height="540" fill="url(#sky)"/><path d="M0 280L55 208L98 266L167 144L223 250L287 180L355 259L390 204V540H0Z" fill="#879fa6"/><path d="M0 333L76 265L122 310L184 249L250 314L320 264L390 305V540H0Z" fill="#aac0b6"/><path d="M0 374Q99 322 220 356T390 334V540H0Z" fill="#88a991"/><path d="M0 444Q192 391 390 428V540H0Z" fill="#638c76"/><g fill="#527766"><path d="M0 366l24-78 22 78H34l24 37H-12l25-37z"/><path d="M337 359l23-77 21 77h-13l27 38h-73l26-38z"/></g>
+<ellipse cx="296" cy="328" rx="92" ry="26" fill="#466c5e"/><ellipse cx="296" cy="322" rx="87" ry="22" fill="url(#stone)" stroke="#d8dcbd" stroke-width="2"/><ellipse cx="98" cy="459" rx="139" ry="38" fill="#45695c"/><ellipse cx="98" cy="450" rx="132" ry="31" fill="url(#stone)" stroke="#d8dcbd" stroke-width="2"/>
+</svg>
+<div id="title">MONSTERS OF MIDGARD · KAMPF</div>
+<div class="card" id="foecard" aria-label="Statuskarte des Gegners"><div class="head"><span>TESTGEGNER <span class="sexmale">♂</span></span><span>Lv.12</span></div><div class="barrow"><span>KP</span><div class="track" role="progressbar" aria-label="Gegner-KP" aria-valuemin="0" aria-valuemax="40" id="foehp-track"><div class="bar" id="foehp"></div></div></div><div class="status-foot"><span class="tag par" id="foestatus">PAR</span><div class="orbs" id="foeorbs" aria-label="Gegner-Team: drei belegte Midgard-Kugeln"></div></div></div>
+<div class="sprite" id="foe"><svg viewBox="0 0 110 135" aria-label="Gegner Platzhalter" role="img"><path d="M18 122L10 84L25 53L19 12L48 35L70 30L92 8L96 48L108 80L98 122L68 134L41 129Z" fill="#608390" stroke="#365c6d" stroke-width="4"/><path d="M36 81L59 64L79 80" fill="none" stroke="#acc9c0" stroke-width="7"/><circle cx="80" cy="60" r="4" fill="#f5f6eb"/></svg></div>
+<div class="sprite" id="hero"><svg viewBox="0 0 124 146" aria-label="Eigenes Monster Platzhalter" role="img"><path d="M24 130L17 88L37 54L31 15L55 37L76 29L98 8L105 52L118 94L102 135L70 144L39 140Z" fill="#416e80" stroke="#294e61" stroke-width="5"/><path d="M43 92L64 66L87 91" stroke="#a9c8c2" stroke-width="9" fill="none"/></svg></div>
+<div id="spark" aria-hidden="true">✦</div>
+<div class="card" id="hero-card" aria-label="Statuskarte des eigenen Monsters"><div class="head"><span id="heroname">TESTMONSTER ♀</span><span id="herolevel">Lv.14</span></div><div class="barrow"><span>KP</span><div class="track" role="progressbar" aria-label="Eigene KP" aria-valuemin="0" aria-valuemax="50" id="herohp-track"><div class="bar" id="herohp"></div></div></div><div class="foot"><span id="hptext">45 / 50 KP</span><span class="tag ok" id="herostatus">OK</span></div><div class="barrow"><span>EP</span><div class="exp" role="progressbar" aria-label="Erfahrung bis zum nächsten Level" aria-valuemin="0" aria-valuemax="100" id="exp-track"><div id="expfill" style="width:55%"></div></div></div><div class="status-foot"><span class="status-caption">MIDGARD-TEAM</span><div class="orbs" id="heroorbs"></div></div></div>
+</section>
+<section id="panel">
+<div id="msg" role="status" aria-live="polite">Was soll dein Monster tun?</div>
+<div id="main"><div class="toprow"><button type="button" class="btn fight" data-menu="fight">⚔ Kampf</button></div><div class="bottomrow"><button type="button" class="btn bag" data-menu="bag">Beutel</button><button type="button" class="btn run" data-menu="run">Flucht</button><button type="button" class="btn party" data-menu="party">Monster</button></div></div>
+<div id="submenu" hidden><div id="choices"></div><div id="moveinfo" hidden><span id="movetype">Attacke auswählen</span><span id="movepp">AP —</span></div><div class="subactions"><button type="button" class="btn" id="use" hidden disabled>Einsetzen</button><button type="button" class="btn" id="back">← Zurück</button></div></div>
+<div id="footer"><span>STABILES DISPLAY · V1.2</span><button type="button" id="reset">Neuer Kampf</button></div>
+</section>
+</main>
+<script>
+(()=>{'use strict';
+const q=s=>document.querySelector(s),msg=q('#msg'),main=q('#main'),sub=q('#submenu'),choices=q('#choices');
+const pause=ms=>new Promise(r=>setTimeout(r,ms));
+const movesBase=[{name:'Testhieb',type:'Normal',ap:35,max:35,dmg:6,color:'#6c7988'},{name:'Funkenstoß',type:'Elektro',ap:15,max:15,dmg:10,color:'#927c39'},{name:'Felsstoß',type:'Gestein',ap:10,max:10,dmg:13,color:'#847151'},{name:'Schutzruf',type:'Status',ap:20,max:20,dmg:0,color:'#50817a'}];
+const teamBase=[{name:'TESTMONSTER',sex:'♀',lv:14,hp:45,max:50,ep:55},{name:'WALDGEIST',sex:'♂',lv:12,hp:38,max:38,ep:25},{name:'FELSWESEN',sex:'♀',lv:11,hp:31,max:31,ep:65}];
+let team,moves,active,enemyHp,heals,selected,busy,ended,sequence=0;
+function orbs(id,values){const el=q(id);el.replaceChildren();for(let i=0;i<6;i++){let s=document.createElement('span'),v=values[i]||'empty';s.className='orb '+(v==='ok'?'':v);s.textContent=v==='ko'?'×':'ᛟ';s.title=v==='empty'?'Leerer Teamplatz':v==='ko'?'Kampfunfähig':'Belegt';el.append(s)}}
+function hpbar(id,h,m){let p=Math.max(0,Math.min(100,100*h/m)),el=q(id);el.style.width=p+'%';el.style.background=p>50?'#62be78':p>20?'#d9be53':'#db5d55';const parent=el.parentElement;if(parent&&parent.getAttribute('role')==='progressbar'){parent.setAttribute('aria-valuenow',String(h));parent.setAttribute('aria-valuemax',String(m))}}
+function draw(){let t=team[active];hpbar('#foehp',enemyHp,40);hpbar('#herohp',t.hp,t.max);q('#heroname').textContent=t.name+' '+t.sex;q('#herolevel').textContent='Lv.'+t.lv;q('#hptext').textContent=t.hp+' / '+t.max+' KP';q('#herostatus').textContent=t.hp<=0?'K.O.':'OK';q('#herostatus').className='tag '+(t.hp<=0?'ko':'ok');q('#foestatus').textContent=enemyHp<=0?'K.O.':'PAR';q('#expfill').style.width=t.ep+'%';q('#exp-track').setAttribute('aria-valuenow',String(t.ep));q('#foe').style.opacity=enemyHp<=0?'.25':'1';orbs('#foeorbs',['ok','ok','ok']);orbs('#heroorbs',team.map(t=>t.hp<=0?'ko':'ok'));q('#heroorbs').setAttribute('aria-label','Midgard-Team: '+team.filter(x=>x.hp>0).length+' von '+team.length+' Monstern einsatzfähig')}
+function say(t){msg.textContent=t}
+function home(t){main.hidden=false;sub.hidden=true;say(t||(ended?'Der Testkampf ist beendet.':team[active].hp<=0?'Wähle ein anderes Monster.':'Was soll dein Monster tun?'))}
+function button(name,info,fn,color){let b=document.createElement('button');b.type='button';b.className='btn choice';if(color)b.style.background=color;const s=document.createElement('span');s.textContent=name;b.append(s);if(info){const z=document.createElement('small');z.textContent=info;b.append(z)}b.addEventListener('click',fn);choices.append(b);return b}
+function menu(k){if(busy||ended)return;main.hidden=true;sub.hidden=false;selected=-1;choices.replaceChildren();q('#moveinfo').hidden=k!=='fight';q('#use').hidden=k!=='fight';q('#use').disabled=true;
+if(k==='fight'){say('Welche Attacke soll eingesetzt werden?');moves.forEach((m,i)=>{let b=button(m.name,m.type+' · AP '+m.ap+'/'+m.max,()=>{selected=i;q('#movetype').textContent='Typ: '+m.type;q('#movepp').textContent='AP '+m.ap+'/'+m.max;q('#use').disabled=m.ap===0||team[active].hp<=0;choices.querySelectorAll('button').forEach((el,j)=>el.classList.toggle('selected',i===j))},m.color);b.disabled=m.ap<=0||team[active].hp<=0});q('#movetype').textContent='Attacke auswählen';q('#movepp').textContent='AP —'}
+else if(k==='bag'){say('Wähle einen Gegenstand.');const b=button('Heilkraut','Vorrat: '+heals,heal);b.disabled=heals===0;button('Weitere Items','Noch nicht verfügbar',()=>say('Weitere Items folgen später.'))}
+else if(k==='party'){say('Wähle ein Monster.');team.forEach((t,i)=>{let b=button(t.name,t.hp+'/'+t.max+' KP',()=>switchTo(i));b.disabled=i===active||t.hp<=0})}
+else if(k==='run'){say('Möchtest du fliehen?');button('Fliehen','Testkampf beenden',()=>{ended=true;home('Du bist aus dem Testkampf geflohen.')});button('Abbrechen','Zurück',()=>home())}}
+function lock(v){document.querySelectorAll('[data-menu],#reset,#back,#use').forEach(b=>b.disabled=v)}
+async function enemyMove(token){if(token!==sequence||ended||enemyHp<=0)return;say('Der Testgegner greift an!');await pause(480);if(token!==sequence)return;team[active].hp=Math.max(0,team[active].hp-4);draw();const hero=q('#hero');hero.classList.add('hit');await pause(500);hero.classList.remove('hit');if(team[active].hp<=0){ended=team.every(t=>t.hp<=0);say(ended?'Alle Monster sind kampfunfähig!':'Dein Monster ist kampfunfähig. Wähle „Monster“.')}else say('Was soll dein Monster tun?')}
+async function attack(){if(busy||ended||selected<0)return;let m=moves[selected];if(m.ap<=0||team[active].hp<=0)return;busy=true;lock(true);let token=sequence;m.ap--;home(team[active].name+' setzt '+m.name+' ein!');q('#hero').classList.add('strike');await pause(460);q('#hero').classList.remove('strike');if(token!==sequence)return;
+if(m.dmg){enemyHp=Math.max(0,enemyHp-m.dmg);draw();q('#foe').classList.add('hit');q('#spark').classList.add('spark');await pause(530);q('#foe').classList.remove('hit');q('#spark').classList.remove('spark')}else{say(team[active].name+' nimmt eine Schutzposition ein.');await pause(500)}
+if(enemyHp<=0){ended=true;team[active].ep=Math.min(100,team[active].ep+15);draw();say('Der Testgegner wurde besiegt!');busy=false;lock(false);return}
+await enemyMove(token);busy=false;lock(false)}
+async function heal(){if(busy||ended)return;let t=team[active];if(heals<=0||t.hp<=0){say('Heilung nicht möglich.');return}if(t.hp===t.max){say('Die KP sind schon vollständig.');return}heals--;t.hp=Math.min(t.max,t.hp+15);draw();home(t.name+' erhält 15 KP (höchstens bis zum Maximum).');busy=true;lock(true);let token=sequence;await pause(550);await enemyMove(token);busy=false;lock(false)}
+async function switchTo(i){if(busy||ended||i===active||team[i].hp<=0)return;active=i;draw();home(team[i].name+' wurde eingewechselt!');busy=true;lock(true);let token=sequence;await pause(550);await enemyMove(token);busy=false;lock(false)}
+function reset(){if(busy)return;sequence++;team=teamBase.map(t=>({...t}));moves=movesBase.map(m=>({...m}));active=0;enemyHp=32;heals=2;selected=-1;busy=false;ended=false;draw();home()}
+document.querySelectorAll('[data-menu]').forEach(b=>b.addEventListener('click',()=>menu(b.dataset.menu)));q('#back').addEventListener('click',()=>{if(!busy)home()});q('#use').addEventListener('click',attack);q('#reset').addEventListener('click',reset);reset();
+})();
+</script>
+</body>
+</html>
