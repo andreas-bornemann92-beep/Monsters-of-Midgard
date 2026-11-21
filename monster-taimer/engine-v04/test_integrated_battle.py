@@ -16,16 +16,16 @@ class IntegratedBattleTests(unittest.TestCase):
         self.assertTrue(any(x["kind"]=="damage" and x["actor"]=="A" and x["amount"]>0 for x in game.log))
 
     def test_poison_residual(self):
-        a=build("A",power=0)
-        b=build("B",power=0)
+        a=build("A",power=0,effect="heal",category="status")
+        b=build("B",power=0,effect="heal",category="status")
         a.status="poison"
         game=IntegratedBattle(a,b)
         game.play_turn("m","m")
         self.assertEqual(a.hp,140)
 
     def test_toxic_scaling(self):
-        a=build("A",power=0)
-        b=build("B",power=0)
+        a=build("A",power=0,effect="heal",category="status")
+        b=build("B",power=0,effect="heal",category="status")
         a.status="toxic"
         game=IntegratedBattle(a,b)
         game.play_turn("m","m")
@@ -34,7 +34,7 @@ class IntegratedBattleTests(unittest.TestCase):
 
     def test_status_infliction_sync(self):
         a=build("A",effect="burn",power=0,category="status")
-        b=build("B",power=0,speed=10)
+        b=build("B",power=0,effect="heal",category="status",speed=10)
         game=IntegratedBattle(a,b)
         game.play_turn("m","m")
         self.assertEqual(b.status,"burn")
