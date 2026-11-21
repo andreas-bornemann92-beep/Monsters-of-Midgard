@@ -43,7 +43,7 @@ class IntegratedBattleTests(unittest.TestCase):
 
     def test_immune_damage(self):
         a=build("A",types=("Elektro",))
-        b=build("B",types=("Boden",),power=0)
+        b=build("B",types=("Boden",),power=0,effect="heal",category="status")
         game=IntegratedBattle(a,b)
         game.play_turn("m","m")
         self.assertEqual(b.hp,160)
