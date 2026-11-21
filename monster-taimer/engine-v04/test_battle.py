@@ -67,6 +67,22 @@ class BattleTests(unittest.TestCase):
         g.play_turn("m1","m1")
         self.assertEqual(b.hp,100)
 
+    def test_full_canon_type_chart(self):
+        self.assertEqual(len(battle.TYPES),18)
+        self.assertEqual(len(battle.TYPE_CHART),18)
+        self.assertTrue(all(len(row)==18 for row in battle.TYPE_CHART.values()))
+        self.assertEqual(battle.TYPE_CHART["Geist"]["Stahl"],0.5)
+        self.assertEqual(battle.TYPE_CHART["Unlicht"]["Stahl"],0.5)
+        self.assertEqual(battle.TYPE_CHART["Drache"]["Fee"],0)
+
+    def test_dual_type_multiplier(self):
+        a=monster("A",types=("Feuer",),power=80)
+        b=monster("B",types=("Pflanze","Stahl"),power=0)
+        c=monster("C",types=("Pflanze",),power=0)
+        g=Battle(a,b,seed=2)
+        g2=Battle(monster("A",types=("Feuer",),power=80),c,seed=2)
+        self.assertGreater(g.damage(a,b,a.moves["m1"].move),g2.damage(g2.a,c,g2.a.moves["m1"].move))
+
     def test_invalid_effect_rejected(self):
         with self.assertRaises(ValueError):
             Move("x","X","Feuer","special",50,100,10,effect="unknown")
