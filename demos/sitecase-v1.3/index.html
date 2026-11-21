@@ -8,22 +8,23 @@
 (function(){
 "use strict";
 var cv=document.getElementById('game'),ctx=cv.getContext('2d'),file=document.getElementById('file'),load=document.getElementById('load'),hint=document.getElementById('hint'),banner=document.getElementById('banner'),joy=document.getElementById('joy'),knob=document.getElementById('knob');
-var bg=null,level=0,x=525,y=575,face=2,moving=false,phase=0,vector={x:0,y:0},keys={},last=0,notice=0,started=false,worldW=1024,worldH=1024;
+var bg=null,level=0,x=765,y=800,face=2,moving=false,phase=0,vector={x:0,y:0},keys={},last=0,notice=0,started=false,worldW=1536,worldH=1024;
 function say(s){hint.textContent=s;hint.style.display='block';notice=performance.now()+2800}
 function rect(a,b,w,h,color){ctx.fillStyle=color;ctx.fillRect(a,b,w,h)}
 function poly(points,color){ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(var i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);ctx.closePath();ctx.fill()}
 function hero(){ctx.save();ctx.translate(x,y);var s=1.45;ctx.scale(s,s);var bob=moving?Math.sin(phase)*2:0;ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(0,0,13,5,0,0,6.283);ctx.fill();rect(-9,-12,8,14,'#c4a37b');rect(2,-12,8,14,'#c4a37b');rect(-10,-1,8,4,'#1b1d23');rect(3,-1,8,4,'#1b1d23');rect(-13,-35+bob,26,24,'#252b35');rect(-18,-33+bob,6,17,'#252b35');rect(13,-33+bob,6,17,'#252b35');if(face===0){rect(-10,-34+bob,20,19,'#141820');rect(-8,-33+bob,16,16,'#292c31');rect(-5,-27+bob,10,7,'#111419')}else{rect(-11,-48+bob,22,19,'#d2a28f');if(face===2){rect(-7,-38+bob,4,4,'#3ca3e8');rect(4,-38+bob,4,4,'#3ca3e8')}}rect(-12,-55+bob,24,14,'#171c27');rect(-10,-58+bob,20,7,'#242833');if(face===2)rect(-11,-46+bob,23,6,'#20242c');if(face===1)rect(-16,-51+bob,16,5,'#1c2029');if(face===3)rect(0,-51+bob,16,5,'#1c2029');ctx.restore()}
-var furniture=[[0,0,1024,225],[0,225,230,165],[720,220,304,190],[0,395,265,285],[704,398,320,260],[0,755,320,269],[320,875,330,149],[650,900,374,124]];
-function blocked(nx,ny){if(nx<35||ny<245||nx>985||ny>975)return true;if(level===1)return false;for(var i=0;i<furniture.length;i++){var r=furniture[i];if(nx>r[0]-16&&nx<r[0]+r[2]+16&&ny>r[1]-10&&ny<r[1]+r[3]+8)return true}return false}
+var furniture=[[0,0,1536,415],[0,415,480,60],[0,476,480,345],[1000,430,530,345],[0,790,445,210],[1070,808,465,198],[500,460,25,20]];
+function blocked(nx,ny){if(nx<48||ny<380||nx>1484||ny>965)return true;if(level===1)return false;for(var i=0;i<furniture.length;i++){var r=furniture[i];if(nx>r[0]-16&&nx<r[0]+r[2]+16&&ny>r[1]-10&&ny<r[1]+r[3]+8)return true}return false}
 function drawRoom(){if(bg){ctx.imageSmoothingEnabled=false;ctx.drawImage(bg,0,0,worldW,worldH)}else{rect(0,0,1024,1024,'#4b332d');for(var i=0;i<1024;i+=30)rect(0,i,1024,2,'#704a34');rect(0,0,1024,215,'#91847e');rect(65,230,280,170,'#271e23');rect(680,220,268,175,'#26242c');rect(72,430,220,185,'#43404b');rect(730,440,170,220,'#403a44');rect(341,402,330,310,'#393037');rect(730,745,230,175,'#291d21');ctx.fillStyle='#f3dfbd';ctx.font='bold 35px monospace';ctx.fillText('ORIGINALBILD',350,500);ctx.font='22px monospace';ctx.fillText('Bitte Zimmerbild laden',340,545)}}
 function drawGround(){rect(0,0,1024,1024,'#735438');for(var i=0;i<1024;i+=34)rect(0,i,1024,3,'#5c3c2e');rect(0,0,1024,215,'#b8a99f');rect(85,265,330,210,'#3d3837');rect(605,280,320,255,'#44404b');rect(325,650,390,170,'#44372f');ctx.font='bold 30px monospace';ctx.fillStyle='#f7e5c6';ctx.fillText('ERDGESCHOSS · PROTOTYP',170,150);ctx.fillText('↑ Zurück ins Zimmer',350,750)}
-function interact(){if(level===0){if(x>660&&y>685){level=1;x=505;y=735;banner.textContent='MIDGARD · ERDGESCHOSS';say('Du gehst die Treppe hinunter.')}else say('Untersuchen · Jugendzimmer')}else{if(y>620&&x>300&&x<720){level=0;x=650;y=750;banner.textContent='MIDGARD · HELDENZIMMER';say('Du gehst zurück ins Zimmer.')}else say('Hier entsteht das Erdgeschoss.')}}
+function interact(){if(level===0){if(x>660&&y>685){level=1;x=505;y=735;banner.textContent='MIDGARD · ERDGESCHOSS';say('Du gehst die Treppe hinunter.')}else say('Untersuchen · Jugendzimmer')}else{if(y>620&&x>300&&x<720){level=0;x=1035;y=790;banner.textContent='MIDGARD · HELDENZIMMER';say('Du gehst zurück ins Zimmer.')}else say('Hier entsteht das Erdgeschoss.')}}
 function loop(now){var dt=Math.min((now-last)/1000||0,.05);last=now;var rw=cv.clientWidth,rh=cv.clientHeight,dpr=Math.min(devicePixelRatio||1,2);if(cv.width!==Math.floor(rw*dpr)||cv.height!==Math.floor(rh*dpr)){cv.width=Math.floor(rw*dpr);cv.height=Math.floor(rh*dpr)}
 ctx.setTransform(1,0,0,1,0,0);rect(0,0,cv.width,cv.height,'#141923');var scale=Math.min(cv.width/worldW,cv.height/worldH),ox=(cv.width-worldW*scale)/2,oy=(cv.height-worldH*scale)/2;ctx.setTransform(scale,0,0,scale,ox,oy);
 if(level===0)drawRoom();else drawGround();
-var dx=vector.x+(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.a?1:0),dy=vector.y+(keys.ArrowDown||keys.s?1:0)-(keys.ArrowUp||keys.w?1:0),mag=Math.hypot(dx,dy);moving=mag>.12;if(moving){dx/=mag;dy/=mag;face=Math.abs(dx)>Math.abs(dy)?dx>0?3:1:dy>0?2:0;var step=190*dt;if(!blocked(x+dx*step,y))x+=dx*step;if(!blocked(x,y+dy*step))y+=dy*step;phase+=dt*12}hero();if(now>notice)hint.style.display='none';requestAnimationFrame(loop)}
+var dx=vector.x+(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.a?1:0),dy=vector.y+(keys.ArrowDown||keys.s?1:0)-(keys.ArrowUp||keys.w?1:0),mag=Math.hypot(dx,dy);moving=mag>.12;if(moving){dx/=mag;dy/=mag;face=Math.abs(dx)>Math.abs(dy)?dx>0?3:1:dy>0?2:0;var step=245*dt;if(!blocked(x+dx*step,y))x+=dx*step;if(!blocked(x,y+dy*step))y+=dy*step;phase+=dt*12}hero();if(now>notice)hint.style.display='none';requestAnimationFrame(loop)}
 file.onchange=function(){var f=file.files[0];if(!f)return;var url=URL.createObjectURL(f),im=new Image();im.onload=function(){bg=im;URL.revokeObjectURL(url);load.style.display='none';say('Originalzimmer geladen. Joystick bewegen · A interagieren.');};im.src=url};
 load.onclick=function(){file.click()};
+var approvedRoom=new Image();approvedRoom.onload=function(){bg=approvedRoom;load.style.display='none';say('Kanon-Zimmer geladen. Joystick bewegen · A interagieren.');};approvedRoom.onerror=function(){say('Bildladefehler. Mit Zimmerbild wählen das Original lokal laden.');};approvedRoom.src="https://d2ol7oe51mr4n9.cloudfront.net/user_36zODdDC4hrOKcoJO07kB6LwKR4/f97c17ee-9aa5-4ec3-89b1-230fe0cb4a74.png";
 joy.addEventListener('pointerdown',function(e){joy.setPointerCapture(e.pointerId);change(e)});
 joy.addEventListener('pointermove',function(e){if(joy.hasPointerCapture(e.pointerId))change(e)});
 function change(e){var r=joy.getBoundingClientRect(),px=e.clientX-r.left-r.width/2,py=e.clientY-r.top-r.height/2,m=Math.hypot(px,py),radius=r.width*.32;if(m>radius){px*=radius/m;py*=radius/m}vector.x=px/radius;vector.y=py/radius;knob.style.left='calc(50% + '+px+'px)';knob.style.top='calc(50% + '+py+'px)'}
@@ -35,7 +36,7 @@ document.getElementById('select').onclick=function(){say('Joystick bewegen · A 
 document.getElementById('start').onclick=function(){say('Midgard Monsters – Sitecase Demo V1.3')};
 window.addEventListener('keydown',function(e){keys[e.key]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();if(e.key==='Enter'||e.key===' ')interact()});
 window.addEventListener('keyup',function(e){keys[e.key]=false});
-say('Zimmerbild wählen: freigegebene Originalgrafik auswählen.');
+say('Freigegebenes Heldenzimmer wird geladen.');
 requestAnimationFrame(loop);
 })();
 </script></body></html>
