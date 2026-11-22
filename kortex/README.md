@@ -37,3 +37,9 @@ Das GitHub-Workflowfile `.github/workflows/kortex-tests.yml` ist bereits auf die
 ## Projekttrennung
 
 Dieser Branch dient ausschließlich der technischen Engine- und Testschnittstelle. Die grafische Demo wird im separaten Chat entwickelt. Monsterlexikon: unverändert, keine übernommenen Monster oder neue Kanonfreigaben.
+
+
+## Einfacher CI-Upload (Quellarchiv)
+Die vollständigen 44 geprüften Quell- und Konfigurationsdateien liegen im bereitgestellten `KORTEX_ENGINE_GITHUB_SOURCE.zip` (65.528 Bytes, SHA-256 `471bbea688f2470642b3d62400fdb0280aa47d7cc25b0f5edaf6c8570b9bf8e3`).
+
+In GitHub im Branch `kortex/ci-integration-v1-5-5` die Datei **als Datei, nicht entpackt** nach `kortex/KORTEX_ENGINE_GITHUB_SOURCE.zip` hochladen und committen. Der Workflow prüft die SHA-256, entpackt die 44 Quellen temporär und führt die 203 Kampf- sowie fünf Statuswerttests und den Master-Smoke-Test aus. Ein grüner GitHub-Workflow ist bisher nicht nachgewiesen.
