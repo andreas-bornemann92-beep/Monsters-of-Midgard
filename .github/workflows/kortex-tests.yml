@@ -1,0 +1,27 @@
+name: KORTEX Python Engine Tests
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'kortex/**'
+      - '.github/workflows/kortex-tests.yml'
+  pull_request:
+    paths:
+      - 'kortex/**'
+      - '.github/workflows/kortex-tests.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Check engine availability
+        run: test -f kortex/engine/kortex_battle/master.py
+      - name: Run KORTEX regressions
+        working-directory: kortex/engine
+        run: |
+          python -m unittest discover -s tests -v
+          python -m unittest -v test_stat_reference
+          python smoke_test_master.py
