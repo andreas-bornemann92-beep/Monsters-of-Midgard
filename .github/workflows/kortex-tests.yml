@@ -17,17 +17,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - name: Verify KORTEX engine and rule profiles
-        shell: bash
+      - name: Expand verified source ZIP
+        run: |
+          if test -f kortex/KORTEX_ENGINE_GITHUB_SOURCE.zip; then
+            echo '471bbea688f2470642b3d62400fdb0280aa47d7cc25b0f5edaf6c8570b9bf8e3  kortex/KORTEX_ENGINE_GITHUB_SOURCE.zip' | sha256sum -c -
+            unzip -q kortex/KORTEX_ENGINE_GITHUB_SOURCE.zip
+          fi
+      - name: Verify engine files
         run: |
           test -f kortex/engine/kortex_battle/master.py
           test -f kortex/05_KORTEX/TYPENPROFIL_V0_6.json
           test -f kortex/05_KORTEX/GRAPH.json
           test -f kortex/engine/smoke_test_master.py
-      - name: Run KORTEX regressions
+      - name: Run 208 KORTEX tests
         working-directory: kortex/engine
         env:
-          PYTHONDONTWRITEBYTECODE: "1"
+          PYTHONDONTWRITEBYTECODE: '1'
         run: |
           python -m unittest discover -s tests -v
           python -m unittest -v test_stat_reference
