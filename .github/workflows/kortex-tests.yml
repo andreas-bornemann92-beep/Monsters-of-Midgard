@@ -17,10 +17,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - name: Check engine availability
-        run: test -f kortex/engine/kortex_battle/master.py
+      - name: Verify KORTEX engine and rule profiles
+        shell: bash
+        run: |
+          test -f kortex/engine/kortex_battle/master.py
+          test -f kortex/05_KORTEX/TYPENPROFIL_V0_6.json
+          test -f kortex/05_KORTEX/GRAPH.json
+          test -f kortex/engine/smoke_test_master.py
       - name: Run KORTEX regressions
         working-directory: kortex/engine
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
         run: |
           python -m unittest discover -s tests -v
           python -m unittest -v test_stat_reference
